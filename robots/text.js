@@ -1,11 +1,26 @@
 const algorithmia = require("algorithmia")
-const algoithmiaApiKey = require('../credentials/algorithmia.json').apiKey
 const sentenceBoundaryDetection = require('sbd')
+
+const algoithmiaApiKey = require('../credentials/algorithmia.json').apiKey
+const watsonApiKey = require('../credentials/watson-nlu.json').apikey
+
+const NaturalLanguageUnderstandingV1 = require('ibm-watson/natural-language-understanding/v1');
+const { IamAuthenticator } = require('ibm-watson/auth');
+
+const nlu = new NaturalLanguageUnderstandingV1({
+  authenticator: new IamAuthenticator({ apikey: watsonApiKey }),
+  version: '2018-04-05',
+  serviceUrl: 'https://api.us-south.natural-language-understanding.watson.cloud.ibm.com'
+});
+
+
 
 async function robot(content){
     await fetchContentFromWikipedia(content)
     sanitizeContent(content)
     breakContentIntoSentenses(content)
+    limitMaximumSentences(content)
+    await fetchKeywordsOfAllSentences(content)
 
     async function fetchContentFromWikipedia(content){
         const algorithmiaAuthenticated = algorithmia(algoithmiaApiKey)
@@ -13,6 +28,8 @@ async function robot(content){
         const wikipediaResponse = await wikipediaAlgorithm.pipe(content.searchTerm)
         const wikipediaContent = wikipediaResponse.get()
         content.sourceContentOriginal = wikipediaContent.content
+        console.log('pegando da wiki')
+
     }
 
     function sanitizeContent(content){
@@ -30,7 +47,9 @@ async function robot(content){
                 return true
             })
             return withoutBlankLinesAndMarkDown.join(' ')
-        }    
+        }  
+        console.log('limpando conteudo')
+         
     }
 
     function removeDatesInParentheses(text){
@@ -48,7 +67,64 @@ async function robot(content){
                 images:[]
             })
         })
+        console.log('separando em sentenças')
+
     }
+    function limitMaximumSentences(content){
+        content.sentences = content.sentences.slice(0, content.maximumSentences)
+    }
+
+    async function fetchKeywordsOfAllSentences(content){
+        for(const sentence of content.sentences){
+            sentence.keywords = await fetchWatsonAndReturnKeywords(sentence.text) 
+        }
+        console.log('colocando keywords')
+    }
+    async function fetchWatsonAndReturnKeywords(sentence){
+        console.log('Entrei no watson')
+        return new Promise((resolve, reject)=> {
+            nlu.analyze(
+                {
+                  html: sentence, // Buffer or String
+                  features: {
+                    keywords: {}
+                  }
+                })
+                .then(response =>{
+                    console.log(JSON.stringify(response.result.keywords, null, 2));
+                    const keywords = response.result.keywords.map((keyword)=>{
+                        return keyword.text
+                    })
+                    resolve(keywords)
+                })
+                .catch(err =>{
+                    console.log('error: ',err)
+                })
+        })
+        
+    }
+            
+    // async function fetchWatsonAndReturnKeywords(sentence){
+    //     console.log('Entrei no watson')
+
+    //     return new Promise((resolve, reject)=> {
+    //         nlu.analyze({
+    //             text: sentence,
+    //             features:{
+    //                 keywords:{}
+    //             }
+    //         }, (error,response)=>{
+    //             if(error){
+    //                 throw error
+    //             }
+    //             const keywords = response.keywords.map((keyword)=>{
+    //                 return keyword.text
+    //             })
+    //             resolve(keywords)
+    //         })
+    //     })
+        
+    // }
 
 }
 module.exports = robot
