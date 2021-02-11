@@ -83,7 +83,6 @@ async function robot(){
         console.log('colocando keywords')
     }
     async function fetchWatsonAndReturnKeywords(sentence){
-        console.log('Entrei no watson')
         return new Promise((resolve, reject)=> {
             nlu.analyze(
                 {
@@ -93,7 +92,6 @@ async function robot(){
                   }
                 })
                 .then(response =>{
-                    console.log(JSON.stringify(response.result.keywords, null, 2));
                     const keywords = response.result.keywords.map((keyword)=>{
                         return keyword.text
                     })
@@ -105,28 +103,6 @@ async function robot(){
         })
         
     }
-            
-    // async function fetchWatsonAndReturnKeywords(sentence){
-    //     console.log('Entrei no watson')
-
-    //     return new Promise((resolve, reject)=> {
-    //         nlu.analyze({
-    //             text: sentence,
-    //             features:{
-    //                 keywords:{}
-    //             }
-    //         }, (error,response)=>{
-    //             if(error){
-    //                 throw error
-    //             }
-    //             const keywords = response.keywords.map((keyword)=>{
-    //                 return keyword.text
-    //             })
-    //             resolve(keywords)
-    //         })
-    //     })
-        
-    // }
 
 }
 module.exports = robot
