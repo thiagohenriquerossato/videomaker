@@ -32,7 +32,8 @@ Esse é um sistema para automatização de criação de videos, baseado no proje
 
 ## :interrobang: Motivo
 
-Iniciei este projeto para desenvolver minhas habilidades com NodeJs e javascript
+Iniciei este projeto para desenvolver minhas habilidades com NodeJs e javascript. Ainda em construção.
+Pretendo integar a uma api para fazer requisiçoes http.
 
 ## :seedling: Requisitos Mínimos
 
